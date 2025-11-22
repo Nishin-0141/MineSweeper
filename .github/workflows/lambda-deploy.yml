@@ -35,7 +35,7 @@ jobs:
         working-directory: ./backend
         run: |
           mkdir -p $BUILD_DIR
-          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o $BUILD_DIR/bootstrap ./backend/cmd/ranking
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o $BUILD_DIR/bootstrap ./cmd/ranking
           cd $BUILD_DIR
           zip -r ../$LAMBDA_OUTPUT bootstrap
           cd ../..
