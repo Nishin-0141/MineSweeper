@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - master
+      - feature/add_login_page
   workflow_dispatch:
 
 jobs:
@@ -62,5 +63,4 @@ jobs:
 
       - name: lambda update
         run: |
-          cd backend/cmd/ranking && zip function.zip bootstrap 
-          aws lambda update-function-code --function-name ${{ secrets.LAMBDA_NAME }} --zip-file fileb://function.zip --publish
+          aws lambda update-function-code --function-name ${{ secrets.LAMBDA_NAME }} --zip-file fileb://$BUILD_DIR/function.zip --publish
