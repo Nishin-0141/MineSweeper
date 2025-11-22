@@ -179,5 +179,6 @@ https://vercel.com
 → 無料で公開完了
 
 ```
+cd backend/cmd/ranking
 GOOS=linux GOARCH=amd64 go build -o bootstrap main.go
 ```
