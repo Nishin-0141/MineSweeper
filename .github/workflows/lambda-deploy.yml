@@ -3,7 +3,7 @@ name: Build Lambda and Deploy
 on:
   push:
     branches:
-      - feature/add_login_page
+      - main
   workflow_dispatch:
 
 jobs:
