@@ -1,5 +1,9 @@
 name: Build Lambda and Deploy
 
+permissions:
+  id-token: write
+  contents: read
+
 on:
   push:
     branches:
@@ -46,11 +50,11 @@ jobs:
           name: lambda-zip
           path: backend/$LAMBDA_OUTPUT
 
-      - name: configure-aws-credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-region: ${{ secrets.AWS_REGION }}
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
           role-session-name: GitHubActions
 
       - name: get-caller-identity is allowed to run on role.
