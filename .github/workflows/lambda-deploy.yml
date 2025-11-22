@@ -63,4 +63,5 @@ jobs:
 
       - name: lambda update
         run: |
-          aws lambda update-function-code --function-name ${{ secrets.LAMBDA_NAME }} --zip-file fileb://$BUILD_DIR/function.zip --publish
+          # Use the zip created at backend/$LAMBDA_OUTPUT by the build step
+          aws lambda update-function-code --function-name ${{ secrets.LAMBDA_NAME }} --zip-file fileb://backend/${{ env.LAMBDA_OUTPUT }} --publish
