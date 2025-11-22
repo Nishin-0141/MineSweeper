@@ -3,7 +3,7 @@ name: Build Lambda and Deploy
 on:
   push:
     branches:
-      - master
+      - feature/add_login_page
   workflow_dispatch:
 
 jobs:
@@ -35,7 +35,7 @@ jobs:
         working-directory: ./backend
         run: |
           mkdir -p $BUILD_DIR
-          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o $BUILD_DIR/bootstrap ./cmd
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o $BUILD_DIR/bootstrap ./backend/cmd/ranking
           cd $BUILD_DIR
           zip -r ../$LAMBDA_OUTPUT bootstrap
           cd ../..
