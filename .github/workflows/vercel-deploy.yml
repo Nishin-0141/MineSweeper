@@ -20,7 +20,8 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.9.0
+          # Use Node >=20.16.0 because some CLI deps require it
+          node-version: 20.16.0
 
       - name: Install dependencies
         run: npm ci --prefix frontend
@@ -35,7 +36,9 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./frontend
+          # Run Vercel CLI from repository root to avoid duplicating the configured
+          # project root (which may already be set to "frontend" in Vercel).
+          working-directory: .
 
       - name: Vercel — Production (on main push)
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
@@ -44,5 +47,5 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./frontend
+          working-directory: .
           vercel-args: --prod
