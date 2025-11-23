@@ -78,8 +78,8 @@ export default function LoginPage() {
             {loading ? "Loading..." : "ログイン"}
           </button>
 
-          <Link href="/">
-            <a style={{ alignSelf: "center", color: "#0366d6" }}>キャンセル</a>
+          <Link href="/" style={{ alignSelf: "center", color: "#0366d6" }}>
+            キャンセル
           </Link>
         </div>
       </form>

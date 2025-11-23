@@ -1,7 +1,8 @@
 // frontend/app/page.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import LoginPage from "./login/page";
 
 /**
  * Cell: 単一のマス（セル）を表す型
@@ -16,6 +17,45 @@ type Cell = {
   adjacent: number;
   flagged?: boolean;
 };
+
+type RankingEntry = {
+  name: string;
+  score: number;
+  date?: string;
+};
+
+// SVG アイコンを React コンポーネント化（fill は currentColor を使って色をコントロール）
+function BombIcon({ size = 18, color = "#000" }: { size?: number; color?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 -960 960 960"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ display: "block", color }}
+      role="img"
+      aria-label="bomb"
+    >
+      <path fill="currentColor" d="M346-48q-125 0-212.5-88.5T46-350q0-125 86.5-211.5T344-648h13l27-47q12-22 36-28.5t46 6.5l30 17 5-8q23-43 72-56t92 12l35 20-40 69-35-20q-14-8-30.5-3.5T570-668l-5 8 40 23q21 12 27.5 36t-5.5 45l-27 48q23 36 34.5 76.5T646-348q0 125-87.5 212.5T346-48Zm0-80q91 0 155.5-64.5T566-348q0-31-8.5-61T532-466l-26-41 42-72-104-60-42 72h-44q-94 0-163.5 60T125-350q0 92 64.5 157T346-128Zm454-480v-80h120v80H800ZM580-828v-120h80v120h-80Zm195 81-56-56 85-85 56 56-85 85ZM346-348Z" />
+    </svg>
+  );
+}
+
+function FlagIcon({ size = 16, color = "#000" }: { size?: number; color?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 -960 960 960"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ display: "block", color }}
+      role="img"
+      aria-label="flag"
+    >
+      <path fill="currentColor" d="M200-120v-680h360l16 80h224v400H520l-16-80H280v280h-80Zm300-440Zm86 160h134v-240H510l-16-80H280v240h290l16 80Z" />
+    </svg>
+  );
+}
 
 const ROWS: number = 8;
 const COLS: number = 8;
@@ -79,10 +119,86 @@ function countAdjacentMines(board: Cell[][], r: number, c: number) {
  * - ユーザー操作: クリックでセルを開く、右クリックで旗を立てる、リセットボタン
  */
 export default function Home() {
+    // クライアント側で簡易認証チェック: localStorage のトークン有無で表示を切り替える
+    // const [authChecked, setAuthChecked] = useState(false);
+    // const [authenticated, setAuthenticated] = useState(false);
+
+    // useEffect(() => {
+    //   try {
+    //     const t = localStorage.getItem("msw_token");
+    //     setAuthenticated(!!t);
+    //   } catch (e) {
+    //     setAuthenticated(false);
+    //   } finally {
+    //     setAuthChecked(true);
+    //   }
+    // }, []);
+
+    // // 認証チェックが終わるまでは簡易ローディングを表示
+    // if (!authChecked) {
+    //   return <main style={{ padding: 20 }}>Loading...</main>;
+    // }
+
+    // // トークンがなければログインページを表示
+    // if (!authenticated) {
+    //   return <LoginPage />;
+    // }
     // ゲームボードの状態を保持
     const [board, setBoard] = useState<Cell[][]>(() => createBoard());
     // ゲームオーバー状態
     const [lost, setLost] = useState(false);
+
+    // ランキング取得関連
+    const [rankings, setRankings] = useState<RankingEntry[]>([]);
+    const [rankLoading, setRankLoading] = useState(false);
+    const [rankError, setRankError] = useState<string | null>(null);
+
+    useEffect(() => {
+      let mounted = true;
+      const sample: RankingEntry[] = [
+        { name: "alice", score: 120, date: "2025-11-01" },
+        { name: "bob", score: 95, date: "2025-10-28" },
+        { name: "carol", score: 80, date: "2025-10-15" },
+      ];
+
+      const fetchRank = async () => {
+        setRankLoading(true);
+        setRankError(null);
+        try {
+          const res = await fetch("https://5p5x5xbtt5.execute-api.ap-northeast-1.amazonaws.com/prod/ranking", {
+            method: "GET",
+            headers: {
+              "x-api-key": "Y4RjV3bEjK2ETKjdAwaUG3CX8Hkdut396pwuPOy0" // 適切な API キーに置き換えてください
+            }
+          });
+          // レスポンスをコンソールに出力（デバッグ用）
+          console.log('Ranking API response:', res);
+
+          if (!mounted) return;
+          if (!res.ok) {
+            // API が無ければサンプルを利用
+            setRankings(sample);
+            setRankError(`ランキング取得失敗: ${res.status}`);
+            return;
+          }
+          const data = await res.json();
+          if (!mounted) return;
+          // 想定: data = [{ name, score, date }, ...]
+          setRankings(Array.isArray(data) ? data : sample);
+        } catch (e) {
+          if (!mounted) return;
+          setRankings(sample);
+          setRankError('ランキングを取得できませんでした。サンプルを表示します');
+        } finally {
+          if (mounted) setRankLoading(false);
+        }
+      };
+
+      fetchRank();
+      return () => {
+        mounted = false;
+      };
+    }, []);
 
     /**
      * revealAllMines
@@ -207,27 +323,79 @@ export default function Home() {
           {lost && <span style={{ color: "red", marginLeft: 12 }}>ゲームオーバー</span>}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(${COLS}, 36px)`, gap: 6 }}>
-          {board.map((row, r) =>
-            row.map((cell, c) => (
-              <button
-                key={`${r}-${c}`}
-                onClick={() => openCell(r, c)}
-                onContextMenu={(e) => toggleFlag(r, c, e)}
-                style={{
-                  width: 36,
-                  height: 36,
-                  background: cell.open ? (cell.hasMine ? "#ff9999" : "#eee") : "#666",
-                  border: "1px solid #333",
-                  color: cell.open ? "#000" : "#fff",
-                  fontSize: 14,
-                  padding: 0
-                }}
-              >
-                {cell.open ? (cell.hasMine ? "💣" : (cell.adjacent > 0 ? cell.adjacent : "")) : (cell.flagged ? "🚩" : "")}
-              </button>
-            ))
-          )}
+        <div style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
+          <div>
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${COLS}, 36px)`, gap: 4 }}>
+              {board.map((row, r) =>
+                row.map((cell, c) => (
+                  <button
+                    key={`${r}-${c}`}
+                    onClick={() => openCell(r, c)}
+                    onContextMenu={(e) => toggleFlag(r, c, e)}
+                    style={{
+                      width: 36,
+                      height: 36,
+                      background: cell.open ? (cell.hasMine ? "#ff9999" : "#eee") : "#666",
+                      border: "1px solid #333",
+                      color: cell.open ? "#000" : "#fff",
+                      fontSize: 14,
+                      padding: 0,
+                      borderRadius: 8,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      overflow: "hidden"
+                    }}
+                    >
+                    {cell.open ? (
+                      cell.hasMine ? (
+                        <BombIcon size={18}/>
+                      ) : (
+                        (cell.adjacent > 0 ? <span style={{ fontWeight: 600 }}>{cell.adjacent}</span> : "")
+                      )
+                    ) : (
+                      (cell.flagged ? (
+                        <FlagIcon size={18} color="#0c6404ff" />
+                      ) : "")
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+
+          <aside style={{ width: 320, padding: 12, borderRadius: 6, background: "#fafafa", border: "1px solid #e6e6e6" }}>
+            <h2 style={{ marginTop: 0 }}>ランキング</h2>
+            {rankLoading ? (
+              <div>Loading...</div>
+            ) : rankError ? (
+              <div style={{ color: "#b00020" }}>{rankError}</div>
+            ) : (
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead>
+                  <tr style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>
+                    <th style={{ padding: "6px 4px", width: 36 }}>#</th>
+                    <th style={{ padding: "6px 4px" }}>名前</th>
+                    <th style={{ padding: "6px 4px", textAlign: "right" }}>スコア</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rankings.slice(0, 10).map((r, i) => (
+                    <tr key={`${r.name}-${i}`} style={{ borderBottom: "1px solid #f0f0f0" }}>
+                      <td style={{ padding: "6px 4px" }}>{i + 1}</td>
+                      <td style={{ padding: "6px 4px" }}>{r.name}</td>
+                      <td style={{ padding: "6px 4px", textAlign: "right" }}>{r.score}</td>
+                    </tr>
+                  ))}
+                  {rankings.length === 0 && (
+                    <tr>
+                      <td colSpan={3} style={{ padding: "8px 4px", color: "#666" }}>ランキングがありません</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </aside>
         </div>
       </main>
     );
