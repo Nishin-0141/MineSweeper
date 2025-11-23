@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       LAMBDA_OUTPUT: function.zip
-      BUILD_DIR: backend/build
+      BUILD_DIR: build
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -62,5 +62,5 @@ jobs:
 
       - name: lambda update
         run: |
-          cd backend/cmd/ranking && zip function.zip bootstrap 
-          aws lambda update-function-code --function-name ${{ secrets.LAMBDA_NAME }} --zip-file fileb://function.zip --publish
+          # Use the zip created at backend/$LAMBDA_OUTPUT by the build step
+          aws lambda update-function-code --function-name ${{ secrets.LAMBDA_NAME }} --zip-file fileb://backend/${{ env.LAMBDA_OUTPUT }} --publish
